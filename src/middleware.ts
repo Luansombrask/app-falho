@@ -56,6 +56,11 @@ export async function middleware(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
 
+  // Permitir acesso à rota de callback sem autenticação
+  if (request.nextUrl.pathname === '/auth/callback') {
+    return response
+  }
+
   // Se não estiver autenticado e não estiver na página de login, redireciona
   if (!user && request.nextUrl.pathname !== '/login') {
     return NextResponse.redirect(new URL('/login', request.url))
