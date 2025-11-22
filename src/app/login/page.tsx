@@ -34,25 +34,30 @@ export default function LoginPage() {
 
         router.push('/')
       } else {
-        // Cadastro
+        // Cadastro com auto-confirmação
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
             data: {
               name: name,
-            }
+            },
+            emailRedirectTo: `${window.location.origin}/auth/callback`
           }
         })
 
         if (error) throw error
 
-        // Após cadastro bem-sucedido
-        setError('Cadastro realizado! Verifique seu email para confirmar.')
-        setTimeout(() => {
-          setIsLogin(true)
-          setError('')
-        }, 3000)
+        // Verificar se o email precisa ser confirmado
+        if (data?.user && !data?.session) {
+          setError('✅ Cadastro realizado! Verifique seu email para confirmar a conta.')
+        } else if (data?.session) {
+          // Login automático após cadastro (se confirmação de email estiver desabilitada)
+          setError('✅ Conta criada com sucesso! Redirecionando...')
+          setTimeout(() => {
+            router.push('/')
+          }, 1500)
+        }
       }
     } catch (error: any) {
       setError(error.message || 'Ocorreu um erro. Tente novamente.')
@@ -100,14 +105,14 @@ export default function LoginPage() {
             NutriApp
           </h1>
           <p className="text-gray-600">
-            {isLogin ? 'Bem-vindo de volta!' : 'Crie sua conta'}
+            {isLogin ? 'Bem-vindo de volta!' : 'Crie sua conta grátis'}
           </p>
         </div>
 
         {/* Mensagem de erro/sucesso */}
         {error && (
           <div className={`mb-4 p-4 rounded-xl flex items-center space-x-3 ${
-            error.includes('sucesso') || error.includes('Cadastro realizado')
+            error.includes('✅') || error.includes('sucesso')
               ? 'bg-green-50 text-green-700'
               : 'bg-red-50 text-red-700'
           }`}>
@@ -157,7 +162,7 @@ export default function LoginPage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Senha
+              Senha {!isLogin && <span className="text-gray-500 text-xs">(mínimo 6 caracteres)</span>}
             </label>
             <div className="relative">
               <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -211,7 +216,7 @@ export default function LoginPage() {
             disabled={loading}
             className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 rounded-xl font-semibold hover:shadow-lg transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
           >
-            {loading ? 'Carregando...' : isLogin ? 'Entrar' : 'Criar Conta'}
+            {loading ? 'Carregando...' : isLogin ? 'Entrar' : 'Criar Conta Grátis'}
           </button>
         </form>
 
@@ -262,11 +267,14 @@ export default function LoginPage() {
               onClick={() => {
                 setIsLogin(!isLogin)
                 setError('')
+                setEmail('')
+                setPassword('')
+                setName('')
               }}
               className="text-purple-600 hover:text-purple-700 font-semibold"
               disabled={loading}
             >
-              {isLogin ? 'Cadastre-se' : 'Faça login'}
+              {isLogin ? 'Cadastre-se grátis' : 'Faça login'}
             </button>
           </p>
         </div>
