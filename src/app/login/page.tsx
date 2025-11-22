@@ -74,11 +74,21 @@ export default function LoginPage() {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`
+          redirectTo: `${window.location.origin}/auth/callback`,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          }
         }
       })
 
-      if (error) throw error
+      if (error) {
+        // Tratamento específico para erro de provedor não habilitado
+        if (error.message.includes('provider is not enabled') || error.message.includes('Unsupported provider')) {
+          throw new Error('⚠️ O login com Google não está habilitado. Configure o Google OAuth no painel do Supabase em: Authentication → Providers → Google')
+        }
+        throw error
+      }
     } catch (error: any) {
       setError(error.message || 'Erro ao fazer login com Google')
       setLoading(false)
@@ -111,13 +121,13 @@ export default function LoginPage() {
 
         {/* Mensagem de erro/sucesso */}
         {error && (
-          <div className={`mb-4 p-4 rounded-xl flex items-center space-x-3 ${
+          <div className={`mb-4 p-4 rounded-xl flex items-start space-x-3 ${
             error.includes('✅') || error.includes('sucesso')
               ? 'bg-green-50 text-green-700'
               : 'bg-red-50 text-red-700'
           }`}>
-            <AlertCircle className="w-5 h-5 flex-shrink-0" />
-            <p className="text-sm">{error}</p>
+            <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+            <p className="text-sm leading-relaxed">{error}</p>
           </div>
         )}
 
